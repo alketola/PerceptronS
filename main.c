@@ -4,34 +4,8 @@
 #include <math.h>
 #include "nullptr.h"
 #include "akmatrix.h"
-
-/* Define maximum dimensions */
-/* Using fixed tables with fixed sizes, making life limited thus esier */
-#define MAX_LAYERS 5
-#define MAX_NEURONS 5
-#define MAX_INPUTS 5
-
-#define LINE_LEN 120
-
-/* typedef struct s_neuron {
-    double in[MAX_INPUTS];
-    double out;
-} s_neuron;
-*/
-typedef struct s_layer {
-    int nrof_neurons;
-    DEF_MAT(w,MAX_INPUTS,MAX_NEURONS);
-    DEF_MAT(umbral,1,MAX_NEURONS);
-    DEF_MAT(output,1,MAX_NEURONS);
-} s_layer;
-
-typedef struct s_perceptron {
-    int nrof_layers;
-    int nrof_inputs;
-    DEF_MAT(input,1,MAX_INPUTS); /* synapses */
-    s_layer layer[MAX_LAYERS];
-    double output;
-} s_perceptron;
+#include "perceptron.h"
+#include "perconst.h"
 
 struct s_perceptron p;
 
@@ -47,10 +21,10 @@ int readLine(FILE *fp, char *line, int length){
 }
 
 int readIntFromFileLine(FILE *fp) {
-    char line[LINE_LEN]="Nothing";
+    char line[LINE_LEN]=" ";
     int ret_val=0;
     /* read int */
-    readLine(fp,line,120);
+    readLine(fp,line,LINE_LEN);
     ret_val=atoi(line);
 
     return ret_val;
@@ -148,15 +122,18 @@ void dumpPerceptron(s_perceptron *p) {
     printf("\n MAX_INPUTS=%d",MAX_INPUTS);
     printf("\n MAX_LAYERS=%d",MAX_LAYERS);
     printf("\n MAX_NEURONS=%d",MAX_NEURONS);
-    printf("\n layer->%p",p->layer);
+    printf("\n");
     int L=0;
     printf("Layer %d:",L);
-    printMat(p->layer[L].w,"Weights",p->nrof_inputs,p->layer[L].nrof_neurons,6);
+    printMat(p->layer[L].w," Weights",p->nrof_inputs,p->layer[L].nrof_neurons,6);
+    printMat(p->layer[L].umbral," Umbrals",1,p->layer[L].nrof_neurons,6);
+    printMat(p->layer[L].output," LayerOutput",1,p->layer[L].nrof_neurons,6);
     for(L=1;L<p->nrof_layers;L++){
         printf("Layer %d:",L);
-        printMat(p->layer[L].w,"Weights",p->layer[L-1].nrof_neurons,p->layer[L].nrof_neurons,6);
-        printMat(p->layer[L].umbral,"Umbrals",1,p->layer[L].nrof_neurons,6);
-        printMat(p->layer[L].output,"LayerOutput",1,p->layer[L].nrof_neurons,6);
+        printMat(p->layer[L].w," Weights",p->layer[L-1].nrof_neurons,p->layer[L].nrof_neurons,6);
+        printMat(p->layer[L].umbral," Umbrals",1,p->layer[L].nrof_neurons,6);
+        printMat(p->layer[L].output," LayerOutput",1,p->layer[L].nrof_neurons,6);
+        printf("\n");
     }
 
 /*    for(L=0;L<p->nrof_layers;L++){
@@ -200,7 +177,7 @@ void processPerceptronInput(s_perceptron *p) {
 
     //pseudo: matMul(p->layer[L].input,p->weights,p->layer[L].output)
     int L=0;
-    char outputname[20];
+    //char outputname[20];
     /* Process layer 0 from input data */
     matMul(p->input,p->layer[L].w,p->layer[L].output,1,p->nrof_inputs,p->layer[L].nrof_neurons);
     subMat(p->layer[L].output,p->layer[L].umbral,1,p->layer[L].nrof_neurons);

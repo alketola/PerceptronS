@@ -35,6 +35,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="akmatrix.h" />
+		<Unit filename="akmatrixtest.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="configuration.txt" />
 		<Unit filename="entrada.txt" />
 		<Unit filename="main.c">
