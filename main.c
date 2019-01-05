@@ -149,8 +149,17 @@ void dumpPerceptron(s_perceptron *p) {
     printf("\n MAX_LAYERS=%d",MAX_LAYERS);
     printf("\n MAX_NEURONS=%d",MAX_NEURONS);
     printf("\n layer->%p",p->layer);
-    int L;
-    for(L=0;L<p->nrof_layers;L++){
+    int L=0;
+    printf("Layer %d:",L);
+    printMat(p->layer[L].w,"Weights",p->nrof_inputs,p->layer[L].nrof_neurons,6);
+    for(L=1;L<p->nrof_layers;L++){
+        printf("Layer %d:",L);
+        printMat(p->layer[L].w,"Weights",p->layer[L-1].nrof_neurons,p->layer[L].nrof_neurons,6);
+        printMat(p->layer[L].umbral,"Umbrals",1,p->layer[L].nrof_neurons,6);
+        printMat(p->layer[L].output,"LayerOutput",1,p->layer[L].nrof_neurons,6);
+    }
+
+/*    for(L=0;L<p->nrof_layers;L++){
         printf("\nlayer=%d",L);
         for(int i =0;i<MAX_INPUTS;i++){
             for(int j = 0; j<MAX_NEURONS;j++){
@@ -164,6 +173,7 @@ void dumpPerceptron(s_perceptron *p) {
             printf("\n Layer[%d] Umbral of neuron[%d]=%f",L,j,umb);
         }
     }
+    */
     //double input[MAX_INPUTS]; /* synapses */
     //double output; /* axon single output value */
 }
@@ -191,17 +201,23 @@ void processPerceptronInput(s_perceptron *p) {
     //pseudo: matMul(p->layer[L].input,p->weights,p->layer[L].output)
     int L=0;
     char outputname[20];
-
-    matMul(p->input,p->layer[L].w,p->layer[L].output,1,p->nrof_inputs,1);
-    //printf("\n      Layer output: %f %f ",p->layer[L].output[0][0],p->layer[L].output[0][1]);
+    /* Process layer 0 from input data */
+    matMul(p->input,p->layer[L].w,p->layer[L].output,1,p->nrof_inputs,p->layer[L].nrof_neurons);
+    subMat(p->layer[L].output,p->layer[L].umbral,1,p->layer[L].nrof_neurons);
+    applyFxMat(p->layer[L].output,1,p->layer[L].nrof_neurons,activation_f);
     //printMat(p->layer[L].output,"layer[0]output",1,p->nrof_inputs,6);
+
+    /* Process layer 1 onwards from the output of the previous layer */
     for(L=1; L < p->nrof_layers; L++ ) {
-        matMul(p->layer[L-1].output,p->layer[L].w,p->layer[L].output,1,p->layer[L-1].nrof_neurons,1);
+        matMul(p->layer[L-1].output,p->layer[L].w,p->layer[L].output,1,p->layer[L-1].nrof_neurons,p->layer[L].nrof_neurons);
+        //printf("\n multiplied: ");
         //sprintf(outputname,"layer[%d]output",L);
         //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);
+
         subMat(p->layer[L].output,p->layer[L].umbral,1,p->layer[L].nrof_neurons);
-        //printf(" biased: ");
+        //printf("\n biased: ");
         //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);
+
         applyFxMat(p->layer[L].output,1,p->layer[L].nrof_neurons,activation_f);
         //printf("\n after activation function applied");
         //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);

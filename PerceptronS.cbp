@@ -31,9 +31,16 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="akmatrix.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="akmatrix.h" />
+		<Unit filename="configuration.txt" />
+		<Unit filename="entrada.txt" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="nullptr.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
