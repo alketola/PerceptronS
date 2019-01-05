@@ -1,14 +1,18 @@
 # depslib dependency file v1.0
-1546644608 source:/home/antti/CBprojects/PerceptronS/PerceptronS/main.c
+1546699622 source:/home/antti/CBprojects/PerceptronS/PerceptronS/main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	<math.h>
+	"nullptr.h"
 	"akmatrix.h"
 
-1546621757 source:/home/antti/CBprojects/PerceptronS/PerceptronS/akmatrix.c
+1546698846 source:/home/antti/CBprojects/PerceptronS/PerceptronS/akmatrix.c
 	<stdio.h>
+	<stdlib.h>
 	"akmatrix.h"
 
-1546644879 /home/antti/CBprojects/PerceptronS/PerceptronS/akmatrix.h
+1546697134 /home/antti/CBprojects/PerceptronS/PerceptronS/akmatrix.h
+
+1546692435 /home/antti/CBprojects/PerceptronS/PerceptronS/nullptr.h
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "nullptr.h"
 #include "akmatrix.h"
 
 /* Define maximum dimensions */
@@ -12,35 +13,34 @@
 
 #define LINE_LEN 120
 
-typedef struct s_neuron {
+/* typedef struct s_neuron {
     double in[MAX_INPUTS];
     double out;
 } s_neuron;
-
+*/
 typedef struct s_layer {
     int nrof_neurons;
-    double w[MAX_INPUTS][MAX_NEURONS];
-    double umbral[MAX_NEURONS];
-    s_neuron neuron[MAX_NEURONS];
+    DEF_MAT(w,MAX_INPUTS,MAX_NEURONS);
+    DEF_MAT(umbral,1,MAX_NEURONS);
+    DEF_MAT(output,1,MAX_NEURONS);
 } s_layer;
 
 typedef struct s_perceptron {
     int nrof_layers;
     int nrof_inputs;
-    double input[MAX_INPUTS]; /* synapses */
+    DEF_MAT(input,1,MAX_INPUTS); /* synapses */
     s_layer layer[MAX_LAYERS];
-    double output; /* axon single output value */
+    double output;
 } s_perceptron;
 
 struct s_perceptron p;
 
 int readLine(FILE *fp, char *line, int length){
-    size_t len = 0;
-    int read;
+    char *read;
     int success = 0;
     read = fgets(line,length,fp);//getline(&line, &len, fp);
 
-    if ((read != NULL)){
+    if ((read != NULLPTR)){
         success = 1;
     }
     return success;
@@ -48,7 +48,6 @@ int readLine(FILE *fp, char *line, int length){
 
 int readIntFromFileLine(FILE *fp) {
     char line[LINE_LEN]="Nothing";
-    size_t len = 0;
     int ret_val=0;
     /* read int */
     readLine(fp,line,120);
@@ -61,19 +60,19 @@ void readWeights(FILE *fp,s_perceptron *p, int current_layer, int current_nrof_i
     char line[ MAX_INPUTS + 1 * 10 ];
     char *token;
     double wij;
-    int layer_nr=0;
 
-    readLine(fp, &line,LINE_LEN);
+    readLine(fp, (char *)&line,LINE_LEN);
     printf("\nWeights line:%s",line);
-    token = strtok(line," ");
+    token = strtok(line," "); /* pick first space-separated word from line */
     for(int i =0;i<current_nrof_inputs;i++){
         for(int j = 0; j<current_nrof_neurons;j++){
-            if(token!=NULL){
+            if(token!=NULLPTR){
                 wij = atof(token);
                 printf("\nw[%d][%d]=%1.6f",i,j,wij);
             }
-            p->layer[current_layer].w[i][j]=wij;
-            token = strtok(NULL," ");
+            p->layer[current_layer].w[i][j]=wij; /* weight from input i to neuron j on current layer of p */
+
+            token = strtok(NULLPTR," "); /* Pick next token. With NULL source strtok will remember last line */
         }
     }
 }
@@ -82,34 +81,28 @@ void readUmbrales(FILE *fp, s_perceptron *p, int current_layer, int current_nrof
     char line[LINE_LEN];
     char *token;
     double umb;
-    readLine(fp, &line,LINE_LEN);
+    readLine(fp, (char *)&line,LINE_LEN);
     printf("\nUmbral line:%s",line);
     token = strtok(line," ");
     for(int j = 0; j<current_nrof_neurons;j++){
-        if(token!=NULL){
+        if(token!=NULLPTR){
             umb = atof(token);
             printf("\numbral[%d]=%1.6f",j,umb);
-            p->layer[current_layer].umbral[j]=umb;
-            token = strtok(NULL," ");
+            p->layer[current_layer].umbral[0][j]=umb; /*  umbral of neuron j on current layer of perceptron */
+            token = strtok(NULLPTR," ");
         }
     }
-
-
 }
 
 /* This function reads the configuration file and initializes coefficients etc */
 void initPerceptron(s_perceptron *p, char *config_file_name) {
     FILE *config_file;
-    char * line = NULL;
-    size_t len = 0;
-    int read;
 
     int par_n_layers = 0;
     int par_n_inputs = 0;
-    int success = 0;
 
     config_file = fopen(config_file_name,"r");
-    if (config_file == NULL) {
+    if (config_file == NULLPTR) {
         printf("Error: Config File [%s] not found",config_file_name);
         exit(EXIT_FAILURE);
     }
@@ -127,10 +120,15 @@ void initPerceptron(s_perceptron *p, char *config_file_name) {
     printf("\nNumber of inputs:%d", par_n_inputs);
     p->nrof_layers=par_n_layers;
     p->nrof_inputs=par_n_inputs;
+    allocMat(p->input,1,MAX_INPUTS);
     int current_layer;
     int current_nrof_inputs = par_n_inputs;
     int current_nrof_neurons = 0;
     for(current_layer=0;current_layer<par_n_layers;current_layer++){
+        /* Will have to (m)alloc-ate the weights matrix for each layer */
+        allocMat(p->layer[current_layer].w,MAX_INPUTS,MAX_NEURONS); /* allocate memory for weight matrix */
+        allocMat(p->layer[current_layer].output,1,MAX_NEURONS);
+        allocMat(p->layer[current_layer].umbral,1,MAX_NEURONS);
         printf("\nLoading layer #%d",current_layer);
         current_nrof_neurons = readIntFromFileLine(config_file);
         printf("\n Number of inputs:  %d",current_nrof_inputs);
@@ -150,19 +148,20 @@ void dumpPerceptron(s_perceptron *p) {
     printf("\n MAX_INPUTS=%d",MAX_INPUTS);
     printf("\n MAX_LAYERS=%d",MAX_LAYERS);
     printf("\n MAX_NEURONS=%d",MAX_NEURONS);
-    printf("\n layer->%d",p->layer);
+    printf("\n layer->%p",p->layer);
     int L;
-    for(L=0;L<MAX_LAYERS;L++){
+    for(L=0;L<p->nrof_layers;L++){
         printf("\nlayer=%d",L);
         for(int i =0;i<MAX_INPUTS;i++){
             for(int j = 0; j<MAX_NEURONS;j++){
-                float wij= p->layer[L].w[i][j];
-                printf("\n  input=%d neuron=%d weight=%f",i,j,wij);
+                printf("\n  input=%d neuron=%d ",i,j);
+                double wij= p->layer[L].w[i][j];
+                printf(" weight=%f",wij);
             }
         }
         for(int j = 0; j<MAX_NEURONS;j++){
-            float umb = p->layer->umbral[j];
-            printf("\n Layer[%d] Umbral[%d]=%f",L,j,umb);
+            float umb = p->layer->umbral[0][j];
+            printf("\n Layer[%d] Umbral of neuron[%d]=%f",L,j,umb);
         }
     }
     //double input[MAX_INPUTS]; /* synapses */
@@ -171,32 +170,10 @@ void dumpPerceptron(s_perceptron *p) {
 
 double activation_f(double x){
 
-    return 1 / (1 + pow(M_E,-20*x));
+    return pow((1 + exp(-20*x)),-1);
 
 }
-/*
-void processPerceptronLayer(matrix input, matrix output, s_perceptron *p) {
 
-    DEF_MAT(current_inputs,1,MAX_NEURONS);
-    allocMat(current_inputs,1,MAX_NEURONS);
-    copyMat(inputs,current_inputs,1,nrof_inputs);
-    int current_nrof_inputs = nrof_inputs;
-    int current_nrof_outputs = 0;
-    for(int l=0;l < p->nrof_layers;l++) {
-        for(int n=0;n < p->layer[l].nrof_neurons;n++) {
-            for(int i=0;i<nrof_inputs;i++) {
-                weights[i][n]=p->layer[l].w[i][n];
-            }
-        }
-        matMul(current_inputs,weights,outputs,current_nrof_inputs,);
-
-        copyMat(outputs,current_inputs,1,nrof_inputs);
-        current_nrof_outputs = p->layer[l].nrof_neurons;
-        current_nrof_inputs = nrof_outputs;
-    }
-
-}
-*/
 /**
 * 1. copy input data to first layer inputs to Perceptron layer input
 * 2. loop through layers in perceptron:
@@ -210,16 +187,26 @@ void processPerceptronLayer(matrix input, matrix output, s_perceptron *p) {
 */
 
 void processPerceptronInput(s_perceptron *p) {
-    DEF_MAT(weights,MAX_INPUTS,MAX_NEURONS);
-    allocMat(weights,MAX_INPUTS,MAX_NEURONS);
-    setMat(weights,MAX_INPUTS,MAX_NEURONS,0.0);
-
-    DEF_MAT(outputs,1,MAX_NEURONS);
-    allocMat(outputs,1,MAX_NEURONS);
-    setMat(outputs,1,MAX_NEURONS,0.0);
 
     //pseudo: matMul(p->layer[L].input,p->weights,p->layer[L].output)
+    int L=0;
+    char outputname[20];
 
+    matMul(p->input,p->layer[L].w,p->layer[L].output,1,p->nrof_inputs,1);
+    //printf("\n      Layer output: %f %f ",p->layer[L].output[0][0],p->layer[L].output[0][1]);
+    //printMat(p->layer[L].output,"layer[0]output",1,p->nrof_inputs,6);
+    for(L=1; L < p->nrof_layers; L++ ) {
+        matMul(p->layer[L-1].output,p->layer[L].w,p->layer[L].output,1,p->layer[L-1].nrof_neurons,1);
+        //sprintf(outputname,"layer[%d]output",L);
+        //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);
+        subMat(p->layer[L].output,p->layer[L].umbral,1,p->layer[L].nrof_neurons);
+        //printf(" biased: ");
+        //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);
+        applyFxMat(p->layer[L].output,1,p->layer[L].nrof_neurons,activation_f);
+        //printf("\n after activation function applied");
+        //printMat(p->layer[L].output,outputname,1,p->layer[L].nrof_neurons,6);
+    }
+    p->output = p->layer[L-1].output[0][0];
 
 }
 
@@ -230,40 +217,43 @@ void executePerceptron(s_perceptron *p, char *input_file_name) {
     char *token;
     char input_line[LINE_LEN];
     input_file = fopen(input_file_name,"r");
-    if (input_file == NULL) {
+    if (input_file == NULLPTR) {
         printf("Error: input_file [%s] not found",input_file_name);
         exit(EXIT_FAILURE);
     }
 
 
-    while(readLine(input_file,&input_line,LINE_LEN)){
+    while(readLine(input_file,(char *)&input_line,LINE_LEN)){
         printf("\nInput : (");
         token = strtok(input_line," ");
         double input;
         for(int i = 0; i<p->nrof_inputs;i++){
-            if(token!=NULL){
+            if(token!=NULLPTR){
                 input = atof(token);
                 printf("%1.6f ",input);
-                p->input[i]=input;
-                token = strtok(NULL," ");
+                p->input[0][i]=input;
+                token = strtok(NULLPTR," ");
             }
             if(i<p->nrof_inputs-1) printf(", ");
             else printf(") -> ");
         }
-        processPerceptronInput(&p);
-        printf("      Output:(%1.6f)",p->output);
+        processPerceptronInput(p);
+        printf("      Output:(%6f)",p->output);
     }
 
 }
 
 int main()
 {
-    test_matmul();
-    /*
+    //test_matmul();
+    //test_applyFx();
+    //exit(EXIT_SUCCESS);
+
     initPerceptron(&p,"configuration.txt");
     dumpPerceptron(&p);
+
     executePerceptron(&p,"entrada.txt");
     printf("\n");
     return 0;
-    */
+
 }
