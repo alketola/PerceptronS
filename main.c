@@ -7,7 +7,7 @@
 #include "perceptron.h"
 #include "perconst.h"
 
-struct s_perceptron p;
+s_perceptron p;
 
 int readLine(FILE *fp, char *line, int length){
     char *read;
@@ -21,21 +21,21 @@ int readLine(FILE *fp, char *line, int length){
 }
 
 int readIntFromFileLine(FILE *fp) {
-    char line[LINE_LEN]=" ";
+    char line[MAX_LINE_LEN]=" ";
     int ret_val=0;
     /* read int */
-    readLine(fp,line,LINE_LEN);
+    readLine(fp,line,MAX_LINE_LEN);
     ret_val=atoi(line);
 
     return ret_val;
 }
 
 void readWeights(FILE *fp,s_perceptron *p, int current_layer, int current_nrof_inputs,int current_nrof_neurons) {
-    char line[ MAX_INPUTS + 1 * 10 ];
-    char *token;
+    char line[MAX_LINE_LEN]; /* if you read longer line than MAX_LINE_LEN you will experience stack smashing */
+    char *token=NULLPTR;
     double wij;
 
-    readLine(fp, (char *)&line,LINE_LEN);
+    readLine(fp, (char *)&line,MAX_LINE_LEN);
     printf("\nWeights line:%s",line);
     token = strtok(line," "); /* pick first space-separated word from line */
     for(int i =0;i<current_nrof_inputs;i++){
@@ -49,13 +49,15 @@ void readWeights(FILE *fp,s_perceptron *p, int current_layer, int current_nrof_i
             token = strtok(NULLPTR," "); /* Pick next token. With NULL source strtok will remember last line */
         }
     }
+    printf("\n");
+    return;
 }
 
 void readUmbrales(FILE *fp, s_perceptron *p, int current_layer, int current_nrof_neurons) {
-    char line[LINE_LEN];
+    char line[MAX_LINE_LEN];
     char *token;
     double umb;
-    readLine(fp, (char *)&line,LINE_LEN);
+    readLine(fp, (char *)&line,MAX_LINE_LEN);
     printf("\nUmbral line:%s",line);
     token = strtok(line," ");
     for(int j = 0; j<current_nrof_neurons;j++){
@@ -66,6 +68,7 @@ void readUmbrales(FILE *fp, s_perceptron *p, int current_layer, int current_nrof
             token = strtok(NULLPTR," ");
         }
     }
+    printf("\n");
 }
 
 /* This function reads the configuration file and initializes coefficients etc */
@@ -109,7 +112,9 @@ void initPerceptron(s_perceptron *p, char *config_file_name) {
         printf("\n Number of neurons: %d",current_nrof_neurons);
         p->layer[current_layer].nrof_neurons=current_nrof_neurons;
         readWeights(config_file,p,current_layer,current_nrof_inputs,current_nrof_neurons);
+        printf("\n readweights done");
         readUmbrales(config_file,p,current_layer,current_nrof_neurons);
+        current_nrof_inputs = current_nrof_neurons; /* store fir next round */
     }
 
 }
@@ -208,7 +213,7 @@ void executePerceptron(s_perceptron *p, char *input_file_name) {
     printf(    "\n===========================");
     FILE *input_file;
     char *token;
-    char input_line[LINE_LEN];
+    char input_line[MAX_LINE_LEN];
     input_file = fopen(input_file_name,"r");
     if (input_file == NULLPTR) {
         printf("Error: input_file [%s] not found",input_file_name);
@@ -216,7 +221,7 @@ void executePerceptron(s_perceptron *p, char *input_file_name) {
     }
 
 
-    while(readLine(input_file,(char *)&input_line,LINE_LEN)){
+    while(readLine(input_file,(char *)&input_line,MAX_LINE_LEN)){
         printf("\nInput : (");
         token = strtok(input_line," ");
         double input;
@@ -243,7 +248,7 @@ int main()
     //exit(EXIT_SUCCESS);
 
     initPerceptron(&p,"configuration.txt");
-    dumpPerceptron(&p);
+    //dumpPerceptron(&p);
 
     executePerceptron(&p,"entrada.txt");
     printf("\n");

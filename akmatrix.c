@@ -96,7 +96,7 @@ int readMat(matrix a, int m, int n) {
 void printMat(matrix a, char *matname, int m, int n, int w) {
     char printformat[10];
     //printf("\nPRINTMAT:\n");
-    sprintf(printformat, " %%f%%c",w); /* adding the desired char field width to the end */
+    sprintf(printformat," %%f%%c",w); /* adding the desired char field width to the end */
     //printf("\n FORMAT=%s\n",printformat);
     printf("\n%s:",matname);
     printf("\n");

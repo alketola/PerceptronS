@@ -44,6 +44,8 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="nullptr.h" />
+		<Unit filename="perceptron.h" />
+		<Unit filename="perconst.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

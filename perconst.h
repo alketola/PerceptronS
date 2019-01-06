@@ -7,6 +7,6 @@
 #define MAX_NEURONS 5
 #define MAX_INPUTS 5
 
-#define LINE_LEN 120
+#define MAX_LINE_LEN 120
 
 #endif // PERCONST_H_INCLUDED
