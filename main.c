@@ -1,3 +1,14 @@
+/**
+*
+* T h e   P e r c e p t r o n - S i m p l e
+*
+* The MIT LICENCE
+*
+* Copyright Antti Ketola, 2019
+*
+* Made in Spain by a Finnish, unemployed M.Sc in Technology
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,8 +18,12 @@
 #include "perceptron.h"
 #include "perconst.h"
 
+/* The Perceptron data structire lives here! */
 s_perceptron p;
 
+/**
+* Read the next line from an opened file
+*/
 int readLine(FILE *fp, char *line, int length){
     char *read;
     int success = 0;
@@ -20,6 +35,9 @@ int readLine(FILE *fp, char *line, int length){
     return success;
 }
 
+/**
+* Read an integer from next line in a file
+*/
 int readIntFromFileLine(FILE *fp) {
     char line[MAX_LINE_LEN]=" ";
     int ret_val=0;
@@ -30,6 +48,10 @@ int readIntFromFileLine(FILE *fp) {
     return ret_val;
 }
 
+/**
+* Read weights from configuration file, the coefficients from input to a neuron,
+* to each neuron on the layer in Perceptron data structure
+*/
 void readWeights(FILE *fp,s_perceptron *p, int current_layer, int current_nrof_inputs,int current_nrof_neurons) {
     char line[MAX_LINE_LEN]; /* if you read longer line than MAX_LINE_LEN you will experience stack smashing */
     char *token=NULLPTR;
@@ -53,6 +75,10 @@ void readWeights(FILE *fp,s_perceptron *p, int current_layer, int current_nrof_i
     return;
 }
 
+/**
+* Read from configuration file umbral i.e. bias (or inhibition) data
+* to each neuron on the layer in Perceptron data structure
+*/
 void readUmbrales(FILE *fp, s_perceptron *p, int current_layer, int current_nrof_neurons) {
     char line[MAX_LINE_LEN];
     char *token;
@@ -71,7 +97,9 @@ void readUmbrales(FILE *fp, s_perceptron *p, int current_layer, int current_nrof
     printf("\n");
 }
 
-/* This function reads the configuration file and initializes coefficients etc */
+/**
+* This function reads the configuration file and initializes coefficients etc.
+*/
 void initPerceptron(s_perceptron *p, char *config_file_name) {
     FILE *config_file;
 
@@ -119,6 +147,9 @@ void initPerceptron(s_perceptron *p, char *config_file_name) {
 
 }
 
+/**
+* Print out what's in the Perceptron data structure
+*/
 void dumpPerceptron(s_perceptron *p) {
     printf("\n\nDUMP perceptron:");
     printf("\n- - - - - - - - - ");
@@ -140,26 +171,16 @@ void dumpPerceptron(s_perceptron *p) {
         printMat(p->layer[L].output," LayerOutput",1,p->layer[L].nrof_neurons,6);
         printf("\n");
     }
-
-/*    for(L=0;L<p->nrof_layers;L++){
-        printf("\nlayer=%d",L);
-        for(int i =0;i<MAX_INPUTS;i++){
-            for(int j = 0; j<MAX_NEURONS;j++){
-                printf("\n  input=%d neuron=%d ",i,j);
-                double wij= p->layer[L].w[i][j];
-                printf(" weight=%f",wij);
-            }
-        }
-        for(int j = 0; j<MAX_NEURONS;j++){
-            float umb = p->layer->umbral[0][j];
-            printf("\n Layer[%d] Umbral of neuron[%d]=%f",L,j,umb);
-        }
-    }
-    */
-    //double input[MAX_INPUTS]; /* synapses */
-    //double output; /* axon single output value */
 }
 
+/**
+* The activation function of the neurons in the Perceptron
+*
+* It's a sigmoid.
+* I never fully understood why it's -20*x...
+* maybe it's pragmatically just made very steep to work well
+*
+*/
 double activation_f(double x){
 
     return pow((1 + exp(-20*x)),-1);
@@ -167,6 +188,17 @@ double activation_f(double x){
 }
 
 /**
+* This function does the Perceptron procesing of input,
+* propagating through layers to output.
+*
+* Pre-condition:
+*   The inputs have been just written to p->input vector (1 x N matrix)
+*
+* Post-condition:
+*   Not thread safe.
+*   Do not read p->output before this is finished.
+*   p->output will have different values during processing
+*
 * 1. copy input data to first layer inputs to Perceptron layer input
 * 2. loop through layers in perceptron:
 * 2.1    process a layer:
@@ -208,6 +240,11 @@ void processPerceptronInput(s_perceptron *p) {
 
 }
 
+
+/**
+* This function reads each line of input data
+* and runs Perceptron processing to it, yielding output
+*/
 void executePerceptron(s_perceptron *p, char *input_file_name) {
     printf("\n\n\nExecution of the Perceptron");
     printf(    "\n===========================");
@@ -241,6 +278,9 @@ void executePerceptron(s_perceptron *p, char *input_file_name) {
 
 }
 
+/**
+* main, the start, middle and the end of it all
+*/
 int main()
 {
     //test_matmul();
